@@ -13,7 +13,7 @@ function Admin() {
     setStatus('Logging in...');
 
     try {
-      const res = await fetch('http://localhost:3000/api/admin/login', {
+      const res = await fetch('https://vinalaxbackend.onrender.com/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -41,7 +41,7 @@ function Admin() {
   const loadBookings = async jwtToken => {
     setStatus('Loading bookings...');
     try {
-      const res = await fetch('http://localhost:3000/api/bookings', {
+      const res = await fetch('https://vinalaxbackend.onrender.com/api/bookings', {
         headers: { Authorization: 'Bearer ' + jwtToken }
       });
 
