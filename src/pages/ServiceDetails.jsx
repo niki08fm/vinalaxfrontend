@@ -121,7 +121,7 @@ export default function ServiceDetails() {
     }
 
     try {
-      const response = await fetch('http://localhost:5001/api/enquiries', {
+      const response = await fetch('https://vinalaxbackend.onrender.com/enquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
