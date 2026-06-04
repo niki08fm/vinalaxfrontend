@@ -26,7 +26,7 @@ export default function AdminDashboard() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch('http://localhost:5001/api/enquiries', {
+      const response = await fetch('https://vinalaxbackend.onrender.com/api/enquiries', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}` // Sends the secure JWT token to unlock the route
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`http://localhost:5001/api/enquiries/${id}`, {
+      const response = await fetch(`https://vinalaxbackend.onrender.com/enquiries/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
