@@ -38,7 +38,7 @@ export default function Home() {
 
     try {
       // Send the form data straight to our Node.js server endpoint
-      const response = await fetch('http://localhost:5001/api/enquiries', {
+      const response = await fetch('https://vinalaxbackend.onrender.com/api/enquiries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
