@@ -1,0 +1,50 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Home from '/src/pages/Home.jsx';
+import Login from '/src/pages/Login.jsx';
+import AdminDashboard from '/src/pages/AdminDashboard.jsx';
+import ServiceDetails from '/src/pages/ServiceDetails.jsx';
+import ProtectedRoute from '/src/components/Protectedroute.jsx';
+import './App.css';
+
+function App() {
+  return (
+    <BrowserRouter>
+      {/* This global wrapper ensures that any page margin bugs 
+        or unclosed divs inside individual pages won't break 
+        the global theme or push your footer out of bounds.
+      */}
+      <div className="main-app-layout" style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        background: 'var(--light, #faf9f6)' // Fallback to your clean corporate cream
+      }}>
+        <div style={{ flex: 1 }}>
+          <Routes>
+            {/* Core Public Landing Page */}
+            <Route path="/" element={<Home />} />
+            
+            {/* Dynamic Route for Individual Service Details */}
+            <Route path="/services/:serviceId" element={<ServiceDetails />} />
+            
+            {/* Portal Entry Authentication */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected Admin Workspace Management Dashboard */}
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </div>
+      </div>
+    </BrowserRouter>
+  );
+}
+
+export default App;
