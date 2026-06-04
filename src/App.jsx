@@ -4,7 +4,7 @@ import Home from '/src/pages/Home.jsx';
 import Login from '/src/pages/Login.jsx';
 import AdminDashboard from '/src/pages/AdminDashboard.jsx';
 import ServiceDetails from '/src/pages/ServiceDetails.jsx';
-import ProtectedRoute from '/src/components/Protectedroute.jsx';
+import ProtectedRoute from '/src/components/ProtectedRoute.jsx';
 import './App.css';
 
 function App() {
