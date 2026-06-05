@@ -110,7 +110,7 @@ export default function ServiceDetails() {
   const navigate = useNavigate();
   const service = SERVICE_DATA[serviceId];
 
-  const [formData, setFormData] = useState({ fname: '', lname: '', company: '', phone: '' });
+  const [formData, setFormData] = useState({ fname: '', lname: '', company: '', phone: '', message: '' });
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
@@ -144,7 +144,7 @@ export default function ServiceDetails() {
           company: formData.company,
           phone: formData.phone,
           service: service.title,
-          message: `Inquiry registered for ${service.title} specialized operational framework.`
+          message: formData.message
         }),
       });
 
@@ -234,42 +234,51 @@ export default function ServiceDetails() {
           </div>
 
           <div style={{ background: '#ffffff', border: '1px solid #e2dfd5', padding: '2.5rem', borderRadius: '12px', boxShadow: '0 12px 40px rgba(13,27,42,0.04)' }}>
-            <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.75rem', color: '#0d1b2a', margin: '0 0 0.5rem 0' }}>Request Corporate Consultation</h3>
-            <p style={{ color: '#555555', fontSize: '0.88rem', lineHeight: '1.5', margin: '0 0 2rem 0' }}>
-              Arrange an operational review regarding our specialized {service.title} frameworks.
-            </p>
-
             {!isSubmitted ? (
-              <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>First Name *</label>
-                    <input type="text" id="fname" value={formData.fname} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Ravi" required />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Last Name</label>
-                    <input type="text" id="lname" value={formData.lname} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Kumar" />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Company Identity</label>
-                  <input type="text" id="company" value={formData.company} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Your Enterprise Pvt Ltd" />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Phone Line Number *</label>
-                  <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="+91 98765 43210" required />
-                </div>
-                <button type="submit" style={{ marginTop: '1rem', background: '#0d1b2a', color: '#ffffff', border: 'none', padding: '0.9rem', borderRadius: '4px', fontWeight: '600', cursor: 'pointer', letterSpacing: '0.03em' }}>
-                  Submit Inquiry Request →
-                </button>
-              </form>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>✅</div>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: '#0d1b2a', fontSize: '1.2rem' }}>Inquiry Logged Successfully!</h4>
-                <p style={{ color: '#555555', fontSize: '0.88rem', margin: 0, lineHeight: '1.6' }}>
-                  Thank you. Our corporate operations officers will map your requirements regarding {service.title} and connect with you shortly.
+              <>
+                <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.75rem', color: '#0d1b2a', margin: '0 0 0.5rem 0' }}>Request Corporate Consultation</h3>
+                <p style={{ color: '#555555', fontSize: '0.88rem', lineHeight: '1.5', margin: '0 0 2rem 0' }}>
+                  Arrange an operational review regarding our specialized {service.title} frameworks.
                 </p>
+
+                <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>First Name *</label>
+                      <input type="text" id="fname" value={formData.fname} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Ravi" required />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Last Name</label>
+                      <input type="text" id="lname" value={formData.lname} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Kumar" />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Company Identity</label>
+                    <input type="text" id="company" value={formData.company} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Your Enterprise Pvt Ltd" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Phone Line Number *</label>
+                    <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="+91 98765 43210" required />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Message (Optional)</label>
+                    <textarea id="message" value={formData.message} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6', minHeight: '90px', resize: 'vertical', fontFamily: 'inherit' }} placeholder="Tell us briefly about your operational needs..." />
+                  </div>
+                  <button type="submit" style={{ marginTop: '0.5rem', background: '#0d1b2a', color: '#ffffff', border: 'none', padding: '0.9rem', borderRadius: '4px', fontWeight: '600', cursor: 'pointer', letterSpacing: '0.03em' }}>
+                    Submit Inquiry Request →
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+                <div style={{ background: 'rgba(46, 204, 113, 0.1)', color: '#2ecc71', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 1.5rem' }}>✅</div>
+                <h4 style={{ fontFamily: 'Cormorant Garamond, serif', margin: '0 0 0.75rem 0', color: '#0d1b2a', fontSize: '1.8rem', fontWeight: '600' }}>Enquiry Logged!</h4>
+                <p style={{ color: '#555555', fontSize: '0.95rem', margin: '0 0 1.5rem 0', lineHeight: '1.6' }}>
+                  Thank you! Our corporate consulting team will review your requirements for <strong>{service.title}</strong> and connect with you shortly.
+                </p>
+                <div style={{ borderTop: '1px solid #e2dfd5', paddingTop: '1.25rem', marginTop: '1.5rem', fontSize: '0.85rem', color: '#0d1b2a' }}>
+                  📞 <strong>Direct Operations Line:</strong> +91 93471 73466
+                </div>
               </div>
             )}
           </div>
