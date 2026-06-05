@@ -304,20 +304,20 @@ export default function Home() {
                   <div className="form-row">
                     <div className="form-group">
                       <label>First Name</label>
-                      <input type="text" id="fname" value={formData.fname} onChange={handleInputChange} placeholder="Ravi" required />
+                      <input type="text" id="fname" value={formData.fname} onChange={handleInputChange} placeholder="First Name" required />
                     </div>
                     <div className="form-group">
                       <label>Last Name</label>
-                      <input type="text" id="lname" value={formData.lname} onChange={handleInputChange} placeholder="Kumar" />
+                      <input type="text" id="lname" value={formData.lname} onChange={handleInputChange} placeholder="Last Name" />
                     </div>
                   </div>
                   <div className="form-group">
                     <label>Company Name</label>
-                    <input type="text" id="company" value={formData.company} onChange={handleInputChange} placeholder="Your Company Pvt Ltd" />
+                    <input type="text" id="company" value={formData.company} onChange={handleInputChange} placeholder="Your Company Name" />
                   </div>
                   <div className="form-group">
                     <label>Phone Number</label>
-                    <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} placeholder="+91 98765 43210" required />
+                    <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} placeholder="Enter contact number" required />
                   </div>
                   <div className="form-group">
                     <label>Service Interested In</label>
