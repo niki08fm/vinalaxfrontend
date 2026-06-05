@@ -245,20 +245,20 @@ export default function ServiceDetails() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>First Name *</label>
-                      <input type="text" id="fname" value={formData.fname} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Ravi" required />
+                      <input type="text" id="fname" value={formData.fname} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="First Name" required />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Last Name</label>
-                      <input type="text" id="lname" value={formData.lname} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Kumar" />
+                      <input type="text" id="lname" value={formData.lname} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Last Name" />
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Company Identity</label>
-                    <input type="text" id="company" value={formData.company} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Your Enterprise Pvt Ltd" />
+                    <input type="text" id="company" value={formData.company} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Your Company Name" />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Phone Line Number *</label>
-                    <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="+91 98765 43210" required />
+                    <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} style={{ padding: '0.75rem', border: '1px solid #c8c5ba', borderRadius: '4px', background: '#faf9f6' }} placeholder="Enter Contact Number" required />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#0d1b2a', textTransform: 'uppercase' }}>Message (Optional)</label>
