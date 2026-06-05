@@ -7,18 +7,38 @@
   </url>
 
   <url>
-    <loc>https://www.vinalaxhrsolutions.com/about</loc>
-    <priority>0.8</priority>
+    <loc>https://www.vinalaxhrsolutions.com/services/hr-solutions</loc>
+    <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://www.vinalaxhrsolutions.com/services</loc>
-    <priority>0.8</priority>
+    <loc>https://www.vinalaxhrsolutions.com/services/payroll-management</loc>
+    <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://www.vinalaxhrsolutions.com/contact</loc>
-    <priority>0.8</priority>
+    <loc>https://www.vinalaxhrsolutions.com/services/third-party-payroll</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.vinalaxhrsolutions.com/services/statutory-compliance</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.vinalaxhrsolutions.com/services/licences-registrations</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.vinalaxhrsolutions.com/services/employee-lifecycle</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.vinalaxhrsolutions.com/services/hr-advisory</loc>
+    <priority>0.9</priority>
   </url>
 
 </urlset>
