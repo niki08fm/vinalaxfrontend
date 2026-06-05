@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import Footer from '../components/Footer.jsx';
 
-// 1. PERFECTED DATA STRUCTURE WITH YOUR EXACT SERVICES
 const SERVICE_DATA = {
   'hr-solutions': {
     title: 'HR Solutions & Documentation',
@@ -34,6 +33,21 @@ const SERVICE_DATA = {
       'Bonus, Gratuity, & Incentive Processing loops',
       'Exhaustive Full & Final (F&F) Settlements evaluations',
       'Audit-ready Employee Salary Records maintenance'
+    ]
+  },
+  'third-party-payroll': {
+    title: 'Third Party Payroll (Off-roll Staff)',
+    icon: '🤝',
+    description: 'A dedicated workforce model where contract, seasonal, and project-based employees are officially onboarded and processed through Vinalax instead of your core corporate payroll. We manage the end-to-end administration, statutory filings, and employee queries so your enterprise remains completely agile and liability-free.',
+    deliverables: [
+      'Seamless Employee Onboarding & KYC document verification',
+      'Accurate, On-Time Salary Processing and disbursal routines',
+      'End-to-End Compliance Filings across PF, ESI, PT, TDS, and LWF regulations',
+      'Centralized tracking for Leave & Attendance records management',
+      'Structured handling of Expense Claims & Reimbursements processing',
+      'Transparent Full & Final (F&F) Settlement closure management',
+      'Immediate access to Audit-Ready Statutory Compliance & Custom reports',
+      'Dedicated Account Management providing a single point of operational contact'
     ]
   },
   'statutory-compliance': {
@@ -121,7 +135,7 @@ export default function ServiceDetails() {
     }
 
     try {
-      const response = await fetch('https://vinalaxbackend.onrender.com/enquiries', {
+      const response = await fetch('https://vinalaxbackend.onrender.com/api/enquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -142,7 +156,7 @@ export default function ServiceDetails() {
       }
     } catch (error) {
       console.error('Submission error:', error);
-      alert('Cannot connect to backend API. Please confirm your server is running on port 5001.');
+      alert('Cannot connect to backend API. Please check your internet connection.');
     }
   };
 
@@ -150,7 +164,35 @@ export default function ServiceDetails() {
     <>
       <Navbar />
 
-      {/* Hero Banner Section */}
+      <style>{`
+        .vinalax-split-layout {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr;
+          gap: 4rem;
+          max-width: 1200px;
+          margin: 0 auto;
+          align-items: start;
+        }
+        .vinalax-pipeline-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 2rem;
+          align-items: start;
+        }
+        @media (max-width: 992px) {
+          .vinalax-split-layout {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+          }
+        }
+        @media (max-width: 768px) {
+          .vinalax-pipeline-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+        }
+      `}</style>
+
       <section style={{ background: '#0d1b2a', minHeight: '42vh', paddingTop: '9rem', paddingBottom: '4rem', textAlign: 'center', paddingLeft: '5%', paddingRight: '5%' }}>
         <div style={{ background: 'rgba(224, 169, 109, 0.1)', color: '#e0a96d', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.15em', padding: '0.5rem 1.25rem', borderRadius: '50px', display: 'inline-block', marginBottom: '1rem', border: '1px solid rgba(224, 169, 109, 0.2)' }}>
           Service Vertical Overview
@@ -163,11 +205,9 @@ export default function ServiceDetails() {
         </p>
       </section>
 
-      {/* Main Breakdown Section */}
       <section style={{ background: '#faf9f6', padding: '5rem 5%' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4rem', maxWidth: '1200px', margin: '0 auto', alignItems: 'start' }}>
+        <div className="vinalax-split-layout">
           
-          {/* Left Side: Services Offered Checklist */}
           <div>
             <p style={{ color: '#e0a96d', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
               Strategic Offerings
@@ -179,7 +219,6 @@ export default function ServiceDetails() {
               Vinalax delivers highly compliant process execution blueprints. Here are the dedicated corporate capacities included under this operational vertical:
             </p>
             
-            {/* The Dynamic, Custom Offerings List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {service.deliverables.map((item, idx) => (
                 <div key={idx} style={{ background: '#ffffff', padding: '1.25rem 1.5rem', borderRadius: '8px', border: '1px solid #e2dfd5', display: 'flex', gap: '1.25rem', alignItems: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
@@ -194,7 +233,6 @@ export default function ServiceDetails() {
             </button>
           </div>
 
-          {/* Right Side: Consultation Form Side Desk */}
           <div style={{ background: '#ffffff', border: '1px solid #e2dfd5', padding: '2.5rem', borderRadius: '12px', boxShadow: '0 12px 40px rgba(13,27,42,0.04)' }}>
             <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.75rem', color: '#0d1b2a', margin: '0 0 0.5rem 0' }}>Request Corporate Consultation</h3>
             <p style={{ color: '#555555', fontSize: '0.88rem', lineHeight: '1.5', margin: '0 0 2rem 0' }}>
@@ -239,7 +277,6 @@ export default function ServiceDetails() {
         </div>
       </section>
 
-      {/* 2. BEAUTIFUL WORKFLOW PIELINE EXTRA VALUE ADDITION SECTION */}
       <section style={{ background: '#f0ede4', padding: '5rem 5%', borderTop: '1px solid #e2dfd5' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
           <p style={{ color: '#e0a96d', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.5rem' }}>
@@ -249,11 +286,10 @@ export default function ServiceDetails() {
             Our End-To-End Employee Management Pipeline
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', alignItems: 'start', position: 'relative' }}>
+          <div className="vinalax-pipeline-grid">
             
-            {/* Stage 1 */}
             <div style={{ background: '#ffffff', padding: '2rem', borderRadius: '8px', border: '1px solid #e2dfd5', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', textAlign: 'left' }}>
-              <div style={{ background: '#0d1b2a', color: '#e0a96d', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifycontent: 'center', fontWeight: '700', fontSize: '0.85rem', marginBottom: '1.25rem', margin: '0 0 1rem 0', paddingLeft: '11px', boxSizing: 'border-box' }}>1</div>
+              <div style={{ background: '#0d1b2a', color: '#e0a96d', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', fontWeight: '700', fontSize: '0.85rem', marginBottom: '1.25rem', margin: '0 0 1rem 0', paddingLeft: '11px', boxSizing: 'border-box' }}>1</div>
               <h4 style={{ color: '#0d1b2a', fontSize: '1.1rem', margin: '0 0 0.75rem 0', fontWeight: '600' }}>Hiring Stage</h4>
               <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#555555', fontSize: '0.88rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.5' }}>
                 <li>Offer Letter Issuance</li>
@@ -262,9 +298,8 @@ export default function ServiceDetails() {
               </ul>
             </div>
 
-            {/* Stage 2 */}
             <div style={{ background: '#ffffff', padding: '2rem', borderRadius: '8px', border: '1px solid #e2dfd5', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', textAlign: 'left' }}>
-              <div style={{ background: '#0d1b2a', color: '#e0a96d', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifycontent: 'center', fontWeight: '700', fontSize: '0.85rem', marginBottom: '1.25rem', margin: '0 0 1rem 0', paddingLeft: '10px', boxSizing: 'border-box' }}>2</div>
+              <div style={{ background: '#0d1b2a', color: '#e0a96d', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', fontWeight: '700', fontSize: '0.85rem', marginBottom: '1.25rem', margin: '0 0 1rem 0', paddingLeft: '10px', boxSizing: 'border-box' }}>2</div>
               <h4 style={{ color: '#0d1b2a', fontSize: '1.1rem', margin: '0 0 0.75rem 0', fontWeight: '600' }}>Employment Stage</h4>
               <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#555555', fontSize: '0.88rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.5' }}>
                 <li>Disciplined Payroll Management</li>
@@ -274,9 +309,8 @@ export default function ServiceDetails() {
               </ul>
             </div>
 
-            {/* Stage 3 */}
             <div style={{ background: '#ffffff', padding: '2rem', borderRadius: '8px', border: '1px solid #e2dfd5', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', textAlign: 'left' }}>
-              <div style={{ background: '#0d1b2a', color: '#e0a96d', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifycontent: 'center', fontWeight: '700', fontSize: '0.85rem', marginBottom: '1.25rem', margin: '0 0 1rem 0', paddingLeft: '10px', boxSizing: 'border-box' }}>3</div>
+              <div style={{ background: '#0d1b2a', color: '#e0a96d', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', fontWeight: '700', fontSize: '0.85rem', marginBottom: '1.25rem', margin: '0 0 1rem 0', paddingLeft: '10px', boxSizing: 'border-box' }}>3</div>
               <h4 style={{ color: '#0d1b2a', fontSize: '1.1rem', margin: '0 0 0.75rem 0', fontWeight: '600' }}>Exit Stage</h4>
               <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#555555', fontSize: '0.88rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.5' }}>
                 <li>Resignation Processing loops</li>
