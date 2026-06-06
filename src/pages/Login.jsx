@@ -98,7 +98,7 @@ export default function Login() {
                 type="email" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
-                placeholder="admin@vinalax.com" 
+                placeholder="Enter Vaild Email" 
                 required 
                 style={{ width: "100%", marginTop: "0.4rem" }}
               />
