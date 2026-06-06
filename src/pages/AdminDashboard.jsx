@@ -139,7 +139,7 @@ export default function AdminDashboard() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`https://vinalaxbackend.onrender.com/enquiries/${id}`, {
+      const response = await fetch(`https://vinalaxbackend.onrender.com/api/enquiries/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
