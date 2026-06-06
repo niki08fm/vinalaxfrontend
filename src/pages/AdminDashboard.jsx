@@ -348,7 +348,7 @@ export default function AdminDashboard() {
                     <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                       <div className="card-title">Enquiry Dossier Ledger ({processedEnquiries.length} matching)</div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-primary btn-sm" style={{ background: 'var(--navy2)', fontSize: '0.75rem' }} onClick={() => triggerCSVDownload(processedEnquiries, 'filtered_enquiries')}>
+                        <button className="btn btn-primary btn-sm" style={{ background: 'var(--navy2)', fontSize: '0.75rem' color: 'white' }} onClick={() => triggerCSVDownload(processedEnquiries, 'filtered_enquiries')}>
                           ⬇ Download Filtered Rows
                         </button>
                         <button className="btn btn-gold btn-sm" style={{ fontSize: '0.75rem' }} onClick={() => triggerCSVDownload(enquiries, 'all_master_enquiries')}>
