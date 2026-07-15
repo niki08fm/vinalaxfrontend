@@ -46,6 +46,16 @@ export const clientApi = {
   companyPayrollDetail: (token, runId) => request(`/company/payrolls/${runId}`, { token }),
   downloadCompanyPayrollExcel: (token, runId, filename) =>
     downloadFile(`/company/payrolls/${runId}/excel`, token, filename),
+  downloadCompanyPayslipPdf: (token, payslipId, filename) =>
+    downloadFile(`/company/payslips/${payslipId}/pdf`, token, filename),
+  downloadCompanyPayslipsZip: (token, monthYear, filename) =>
+    downloadFile(`/company/payslips/download-zip?month_year=${monthYear}`, token, filename),
+  downloadCompanyPfEcrReport: (token, monthYear, filename) =>
+    downloadFile(`/company/reports/pf-ecr?month_year=${monthYear}`, token, filename),
+  downloadCompanyBankReport: (token, monthYear, filename) =>
+    downloadFile(`/company/reports/bank?month_year=${monthYear}`, token, filename),
+  downloadCompanyEsiReport: (token, monthYear, filename) =>
+    downloadFile(`/company/reports/esi?month_year=${monthYear}`, token, filename),
 
   // Employee self-service
   employeePayslips: (token) => request('/employee/payslips', { token }),

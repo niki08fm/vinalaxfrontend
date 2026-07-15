@@ -100,6 +100,9 @@ function CompanyView({ onError }) {
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingZip, setDownloadingZip] = useState(false);
+  const [downloadingPdfId, setDownloadingPdfId] = useState(null);
+  const [downloadingReport, setDownloadingReport] = useState(null);
 
   useEffect(() => {
     clientApi.companyPayrolls(getToken())
@@ -122,6 +125,30 @@ function CompanyView({ onError }) {
     try {
       await clientApi.downloadCompanyPayrollExcel(getToken(), run.id, `Payroll_${run.month_year}.xlsx`);
     } catch (err) { onError(err.message); } finally { setDownloading(false); }
+  };
+
+  const downloadZip = async (run) => {
+    setDownloadingZip(true);
+    try {
+      await clientApi.downloadCompanyPayslipsZip(getToken(), run.month_year, `Payslips_${run.month_year}.zip`);
+    } catch (err) { onError(err.message); } finally { setDownloadingZip(false); }
+  };
+
+  const downloadPayslipPdf = async (p) => {
+    setDownloadingPdfId(p.id);
+    try {
+      await clientApi.downloadCompanyPayslipPdf(getToken(), p.id, `Payslip_${p.full_name}_${p.month_year}.pdf`);
+    } catch (err) { onError(err.message); } finally { setDownloadingPdfId(null); }
+  };
+
+  const downloadReport = async (kind, run) => {
+    setDownloadingReport(kind);
+    try {
+      const filename = `${kind.toUpperCase()}_${run.month_year}.xlsx`;
+      if (kind === 'pf-ecr') await clientApi.downloadCompanyPfEcrReport(getToken(), run.month_year, filename);
+      else if (kind === 'bank') await clientApi.downloadCompanyBankReport(getToken(), run.month_year, filename);
+      else if (kind === 'esi') await clientApi.downloadCompanyEsiReport(getToken(), run.month_year, filename);
+    } catch (err) { onError(err.message); } finally { setDownloadingReport(null); }
   };
 
   if (loading) return <div className="empty">🔄 Loading payroll runs…</div>;
@@ -153,16 +180,21 @@ function CompanyView({ onError }) {
 
       {selected && (
         <div className="card" style={{ marginTop: '1.5rem' }}>
-          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div className="card-title">Payslips · {selected.month_year}</div>
-            <button className="btn btn-gold btn-sm" disabled={downloading} onClick={() => downloadExcel(selected)}>
-              {downloading ? 'Downloading…' : '⬇ Download Excel'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-gold btn-sm" disabled={downloading} onClick={() => downloadExcel(selected)}>
+                {downloading ? 'Downloading…' : '⬇ Download Excel'}
+              </button>
+              <button className="btn btn-gold btn-sm" disabled={downloadingZip} onClick={() => downloadZip(selected)}>
+                {downloadingZip ? 'Downloading…' : '⬇ Download All Payslips (ZIP)'}
+              </button>
+            </div>
           </div>
           {!detail ? <div className="empty">🔄 Loading…</div> : (
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Employee</th><th>Department</th><th>Net pay</th><th>Status</th></tr></thead>
+                <thead><tr><th>Employee</th><th>Department</th><th>Net pay</th><th>Status</th><th></th></tr></thead>
                 <tbody>
                   {(detail.payslips || []).map(p => (
                     <tr key={p.id}>
@@ -170,12 +202,32 @@ function CompanyView({ onError }) {
                       <td>{p.department || '—'}</td>
                       <td>₹{Number(p.net_pay || 0).toLocaleString('en-IN')}</td>
                       <td><span className="badge badge-gray">{p.status}</span></td>
+                      <td>
+                        <button className="btn btn-gold btn-sm" disabled={downloadingPdfId === p.id} onClick={() => downloadPayslipPdf({ ...p, month_year: selected.month_year })}>
+                          {downloadingPdfId === p.id ? 'Downloading…' : '⬇ PDF'}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+
+          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border, #e5e0d8)' }}>
+            <div className="card-title" style={{ marginBottom: '0.75rem' }}>Statutory reports · {selected.month_year}</div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-gold btn-sm" disabled={downloadingReport === 'pf-ecr'} onClick={() => downloadReport('pf-ecr', selected)}>
+                {downloadingReport === 'pf-ecr' ? 'Downloading…' : '⬇ PF ECR Report'}
+              </button>
+              <button className="btn btn-gold btn-sm" disabled={downloadingReport === 'bank'} onClick={() => downloadReport('bank', selected)}>
+                {downloadingReport === 'bank' ? 'Downloading…' : '⬇ Bank Report'}
+              </button>
+              <button className="btn btn-gold btn-sm" disabled={downloadingReport === 'esi'} onClick={() => downloadReport('esi', selected)}>
+                {downloadingReport === 'esi' ? 'Downloading…' : '⬇ ESI Report'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>
