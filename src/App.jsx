@@ -5,6 +5,9 @@ import Login from '/src/pages/Login.jsx';
 import AdminDashboard from '/src/pages/AdminDashboard.jsx';
 import ServiceDetails from '/src/pages/ServiceDetails.jsx';
 import ProtectedRoute from '/src/components/ProtectedRoute.jsx';
+import ClientLogin from '/src/pages/ClientLogin.jsx';
+import ClientPortal from '/src/pages/ClientPortal.jsx';
+import ClientProtectedRoute from '/src/components/ClientProtectedRoute.jsx';
 import './App.css';
 
 function App() {
@@ -21,13 +24,24 @@ function App() {
         <Route path="/login" element={<Login />} />
         
         {/* Protected Admin Workspace Management Dashboard */}
-        <Route 
-          path="/admin" 
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute>
               <AdminDashboard />
             </ProtectedRoute>
-          } 
+          }
+        />
+
+        {/* Client Portal — company/employee logins, separate from the Admin above */}
+        <Route path="/portal/login" element={<ClientLogin />} />
+        <Route
+          path="/portal"
+          element={
+            <ClientProtectedRoute>
+              <ClientPortal />
+            </ClientProtectedRoute>
+          }
         />
       </Routes>
     </BrowserRouter>

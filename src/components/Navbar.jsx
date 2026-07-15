@@ -74,6 +74,7 @@ export default function Navbar() {
         <li><a onClick={() => handleNavClick('why')}>Why Us</a></li>
         <li><a onClick={() => handleNavClick('industries')}>Industries</a></li>
         <li><a onClick={() => handleNavClick('process')}>Process</a></li>
+        <li><a onClick={() => { setIsMobileOpen(false); navigate('/portal/login'); }}>Client Login</a></li>
         <li><a onClick={() => handleNavClick('contact')} className="nav-cta">Get In Touch</a></li>
       </ul>
 
