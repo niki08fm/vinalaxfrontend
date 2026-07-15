@@ -37,7 +37,16 @@ export default function ClientPortal() {
   if (!me) return null;
 
   return (
-    <PortalShell me={me} title={TITLES[tab]} tab={tab} onTabChange={setTab}>
+    <PortalShell me={me} title={me.role === 'COMPANY' ? 'Company Portal' : TITLES[tab]} tab={tab} onTabChange={setTab}>
+      {me.role === 'COMPANY' && (
+        <div className="vhrp-page-head">
+          <div>
+            <span className="vhrp-eyebrow">Company portal</span>
+            <h2 className="vhrp-page-title">{me.company_name || 'Company'}</h2>
+            <p className="vhrp-page-sub">View your payrolls and employee payslips by month.</p>
+          </div>
+        </div>
+      )}
       {me.role === 'COMPANY'
         ? (tab === 'payrolls' ? <PayrollsTab /> : tab === 'payslips' ? <PayslipsTab /> : <ChangePasswordTab />)
         : (tab === 'overview' ? <OverviewTab me={me} onGoPayslips={() => setTab('payslips')} /> : tab === 'payslips' ? <MyPayslipsTab /> : <ChangePasswordTab />)}
@@ -517,6 +526,12 @@ function MyPayslipsTab() {
 
   return (
     <>
+      <div className="vhrp-page-head">
+        <div>
+          <span className="vhrp-eyebrow">My space</span>
+          <h2 className="vhrp-page-title">My payslips</h2>
+        </div>
+      </div>
       {error && <div className="vhrp-alert vhrp-alert-error vhrp-mb">⚠️ {error}</div>}
       {loading ? <div className="vhrp-card vhrp-card-pad" style={{ textAlign: 'center' }}><Spinner large /></div>
         : payslips.length === 0 ? <div className="vhrp-card"><Empty icon="▥" title="No payslips yet">They appear once your payroll is approved.</Empty></div>
