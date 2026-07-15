@@ -240,7 +240,7 @@ function PayslipsTab() {
   const downloadZip = async () => {
     if (!monthYear) return setError('Select a month to download bulk payslips.');
     setDownloadingZip(true);
-    try { await clientApi.downloadCompanyPayslipsZip(getToken(), monthYear, `Payslips_${monthYear}.zip`); }
+    try { await clientApi.downloadCompanyPayslipsZip(getToken(), monthYear, search.trim(), `Payslips_${monthYear}.zip`); }
     catch (err) { setError(err.message); }
     finally { setDownloadingZip(false); }
   };
@@ -278,8 +278,8 @@ function PayslipsTab() {
             <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={() => downloadReport('bank')} disabled={bankBusy}>
               {bankBusy ? 'Generating…' : '⬇ Bank Report'}
             </button>
-            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={downloadZip} disabled={downloadingZip}>
-              {downloadingZip ? 'Downloading…' : '⬇ ZIP (all payslips)'}
+            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={downloadZip} disabled={downloadingZip || filtered.length === 0}>
+              {downloadingZip ? 'Downloading…' : search.trim() ? `⬇ ZIP (${filtered.length} filtered)` : '⬇ ZIP (all payslips)'}
             </button>
           </div>
         )}

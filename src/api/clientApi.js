@@ -52,8 +52,8 @@ export const clientApi = {
   companyPayslipDetail: (token, payslipId) => request(`/company/payslips/${payslipId}`, { token }),
   downloadCompanyPayslipPdf: (token, payslipId, filename) =>
     downloadFile(`/company/payslips/${payslipId}/pdf`, token, filename),
-  downloadCompanyPayslipsZip: (token, monthYear, filename) =>
-    downloadFile(`/company/payslips/download-zip?month_year=${monthYear}`, token, filename),
+  downloadCompanyPayslipsZip: (token, monthYear, search, filename) =>
+    downloadFile(`/company/payslips/download-zip?month_year=${monthYear}${search ? `&search=${encodeURIComponent(search)}` : ''}`, token, filename),
   downloadCompanyPfEcrReport: (token, monthYear, filename) =>
     downloadFile(`/company/reports/pf-ecr?month_year=${monthYear}`, token, filename),
   downloadCompanyBankReport: (token, monthYear, filename) =>
