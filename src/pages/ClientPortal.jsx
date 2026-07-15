@@ -1,15 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clientApi } from '/src/api/clientApi.js';
+import PortalShell from '/src/components/PortalShell.jsx';
+import { Modal, Spinner, Empty, Field, MonthPicker } from '/src/components/PortalUI.jsx';
+import { fmtINR, monthLabel } from '/src/utils/portalFormat.js';
 
 function getToken() { return localStorage.getItem('client_token'); }
+
+const RUN_BADGE = { DRAFT: 'vhrp-badge-gray', GENERATED: 'vhrp-badge-blue', APPROVED: 'vhrp-badge-amber', PAID: 'vhrp-badge-green', LOCKED: 'vhrp-badge-gray' };
+const PS_BADGE = { GENERATED: 'vhrp-badge-blue', APPROVED: 'vhrp-badge-amber', PAID: 'vhrp-badge-green', ON_HOLD: 'vhrp-badge-gray' };
+
+const TITLES = {
+  payrolls: 'Payroll runs', payslips: 'Payslips', password: 'Change password', overview: 'Overview'
+};
 
 export default function ClientPortal() {
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showChangePw, setShowChangePw] = useState(false);
+  const [tab, setTab] = useState(null);
 
   const logout = useCallback(() => {
     localStorage.removeItem('client_token');
@@ -19,213 +28,461 @@ export default function ClientPortal() {
 
   useEffect(() => {
     clientApi.me(getToken())
-      .then(d => setMe(d.user))
+      .then(d => { setMe(d.user); setTab(d.user.role === 'COMPANY' ? 'payrolls' : 'overview'); })
       .catch(() => { logout(); })
       .finally(() => setLoading(false));
   }, [logout]);
 
-  if (loading) return <div className="empty" style={{ padding: '6rem 0', textAlign: 'center' }}>🔄 Loading your portal…</div>;
+  if (loading || !tab) return <div className="vhrp-root"><div className="vhrp-empty"><Spinner large /><div style={{ marginTop: 8 }}>Loading your portal…</div></div></div>;
   if (!me) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--light, #f7f5f2)' }}>
-      <div style={{
-        background: 'var(--navy)', color: '#fff', padding: '1.25rem 2rem',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'
-      }}>
-        <div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.4rem', fontWeight: 600 }}>
-            {me.role === 'COMPANY' ? me.company_name : me.full_name}
-          </div>
-          <div style={{ fontSize: '0.78rem', opacity: 0.8 }}>
-            {me.role === 'COMPANY' ? 'Company portal' : `${me.company_name || ''} · Employee portal`}
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="btn btn-gold btn-sm" onClick={() => setShowChangePw(s => !s)}>Change password</button>
-          <button className="btn btn-danger btn-sm" onClick={logout}>Log out</button>
-        </div>
-      </div>
-
-      <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
-        {error && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>⚠️ {error}</div>}
-
-        {showChangePw && <ChangePasswordCard onDone={() => setShowChangePw(false)} onError={setError} />}
-
-        {me.role === 'COMPANY' ? <CompanyView onError={setError} /> : <EmployeeView onError={setError} />}
-      </div>
-    </div>
+    <PortalShell me={me} title={TITLES[tab]} tab={tab} onTabChange={setTab}>
+      {me.role === 'COMPANY'
+        ? (tab === 'payrolls' ? <PayrollsTab /> : tab === 'payslips' ? <PayslipsTab /> : <ChangePasswordTab />)
+        : (tab === 'overview' ? <OverviewTab me={me} onGoPayslips={() => setTab('payslips')} /> : tab === 'payslips' ? <MyPayslipsTab /> : <ChangePasswordTab />)}
+    </PortalShell>
   );
 }
 
-/* ── Change password ── */
-function ChangePasswordCard({ onDone, onError }) {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    onError('');
-    if (newPassword.length < 8) return onError('New password must be at least 8 characters.');
-    setBusy(true);
-    try {
-      await clientApi.changePassword(getToken(), currentPassword, newPassword);
-      onDone();
-    } catch (err) { onError(err.message); } finally { setBusy(false); }
-  };
-
-  return (
-    <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-      <div className="card-title" style={{ marginBottom: '1rem' }}>Change password</div>
-      <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'end' }}>
-        <div className="form-group">
-          <label style={{ fontSize: '0.78rem' }}>Current password</label>
-          <input type="password" required value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={{ width: '100%' }} />
-        </div>
-        <div className="form-group">
-          <label style={{ fontSize: '0.78rem' }}>New password</label>
-          <input type="password" required value={newPassword} onChange={e => setNewPassword(e.target.value)} style={{ width: '100%' }} />
-        </div>
-        <button type="submit" className="btn btn-gold btn-sm" disabled={busy}>{busy ? 'Saving…' : 'Update password'}</button>
-      </form>
-    </div>
-  );
-}
-
-/* ── Company: payroll runs list + drill into one for payslips + Excel download ── */
-function CompanyView({ onError }) {
+/* ════════════════════════════════════════════════════════════════
+   COMPANY: Payroll runs tab
+═══════════════════════════════════════════════════════════════════ */
+function PayrollsTab() {
+  const [monthYear, setMonthYear] = useState('');
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null);
-  const [detail, setDetail] = useState(null);
-  const [downloading, setDownloading] = useState(false);
-  const [downloadingZip, setDownloadingZip] = useState(false);
-  const [downloadingPdfId, setDownloadingPdfId] = useState(null);
-  const [downloadingReport, setDownloadingReport] = useState(null);
+  const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(null);
+  const [viewRun, setViewRun] = useState(null);
 
-  useEffect(() => {
-    clientApi.companyPayrolls(getToken())
-      .then(d => setRuns(d.runs || []))
-      .catch(err => onError(err.message))
-      .finally(() => setLoading(false));
-  }, [onError]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try { setRuns((await clientApi.companyPayrolls(getToken(), monthYear || undefined)).runs || []); }
+    catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  }, [monthYear]);
 
-  const openRun = async (run) => {
-    setSelected(run);
-    setDetail(null);
-    try {
-      const d = await clientApi.companyPayrollDetail(getToken(), run.id);
-      setDetail(d);
-    } catch (err) { onError(err.message); }
+  useEffect(() => { load(); }, [load]);
+
+  const downloadExcel = async (r) => {
+    setDownloading(r.id);
+    try { await clientApi.downloadCompanyPayrollExcel(getToken(), r.id, `Payroll_${r.month_year}.xlsx`); }
+    catch (err) { setError(err.message); }
+    finally { setDownloading(null); }
   };
-
-  const downloadExcel = async (run) => {
-    setDownloading(true);
-    try {
-      await clientApi.downloadCompanyPayrollExcel(getToken(), run.id, `Payroll_${run.month_year}.xlsx`);
-    } catch (err) { onError(err.message); } finally { setDownloading(false); }
-  };
-
-  const downloadZip = async (run) => {
-    setDownloadingZip(true);
-    try {
-      await clientApi.downloadCompanyPayslipsZip(getToken(), run.month_year, `Payslips_${run.month_year}.zip`);
-    } catch (err) { onError(err.message); } finally { setDownloadingZip(false); }
-  };
-
-  const downloadPayslipPdf = async (p) => {
-    setDownloadingPdfId(p.id);
-    try {
-      await clientApi.downloadCompanyPayslipPdf(getToken(), p.id, `Payslip_${p.full_name}_${p.month_year}.pdf`);
-    } catch (err) { onError(err.message); } finally { setDownloadingPdfId(null); }
-  };
-
-  const downloadReport = async (kind, run) => {
-    setDownloadingReport(kind);
-    try {
-      const filename = `${kind.toUpperCase()}_${run.month_year}.xlsx`;
-      if (kind === 'pf-ecr') await clientApi.downloadCompanyPfEcrReport(getToken(), run.month_year, filename);
-      else if (kind === 'bank') await clientApi.downloadCompanyBankReport(getToken(), run.month_year, filename);
-      else if (kind === 'esi') await clientApi.downloadCompanyEsiReport(getToken(), run.month_year, filename);
-    } catch (err) { onError(err.message); } finally { setDownloadingReport(null); }
-  };
-
-  if (loading) return <div className="empty">🔄 Loading payroll runs…</div>;
-  if (runs.length === 0) return <div className="empty">No payroll runs yet.</div>;
 
   return (
     <>
-      <div className="card">
-        <div className="card-header"><div className="card-title">Payroll runs</div></div>
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Month</th><th>Status</th><th>Employees</th><th>Net pay</th><th></th></tr></thead>
-            <tbody>
-              {runs.map(r => (
-                <tr key={r.id}>
-                  <td>{r.month_year}</td>
-                  <td><span className="badge badge-gray">{r.status}</span></td>
-                  <td>{r.employee_count}</td>
-                  <td>₹{Number(r.total_net || 0).toLocaleString('en-IN')}</td>
-                  <td>
-                    <button className="btn btn-gold btn-sm" onClick={() => openRun(r)}>View</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {error && <div className="vhrp-alert vhrp-alert-error vhrp-mb">⚠️ {error}</div>}
+      <div className="vhrp-card vhrp-card-pad vhrp-mb">
+        <div className="vhrp-row" style={{ flexWrap: 'wrap' }}>
+          <MonthPicker value={monthYear} onChange={setMonthYear} />
+          <span className="vhrp-muted" style={{ fontSize: '0.82rem' }}>
+            {runs.length} payroll run{runs.length !== 1 ? 's' : ''}
+          </span>
         </div>
       </div>
 
-      {selected && (
-        <div className="card" style={{ marginTop: '1.5rem' }}>
-          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <div className="card-title">Payslips · {selected.month_year}</div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-gold btn-sm" disabled={downloading} onClick={() => downloadExcel(selected)}>
-                {downloading ? 'Downloading…' : '⬇ Download Excel'}
-              </button>
-              <button className="btn btn-gold btn-sm" disabled={downloadingZip} onClick={() => downloadZip(selected)}>
-                {downloadingZip ? 'Downloading…' : '⬇ Download All Payslips (ZIP)'}
-              </button>
-            </div>
-          </div>
-          {!detail ? <div className="empty">🔄 Loading…</div> : (
-            <div className="table-wrap">
-              <table>
-                <thead><tr><th>Employee</th><th>Department</th><th>Net pay</th><th>Status</th><th></th></tr></thead>
-                <tbody>
-                  {(detail.payslips || []).map(p => (
-                    <tr key={p.id}>
-                      <td>{p.full_name}<div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{p.employee_number}</div></td>
-                      <td>{p.department || '—'}</td>
-                      <td>₹{Number(p.net_pay || 0).toLocaleString('en-IN')}</td>
-                      <td><span className="badge badge-gray">{p.status}</span></td>
-                      <td>
-                        <button className="btn btn-gold btn-sm" disabled={downloadingPdfId === p.id} onClick={() => downloadPayslipPdf({ ...p, month_year: selected.month_year })}>
-                          {downloadingPdfId === p.id ? 'Downloading…' : '⬇ PDF'}
-                        </button>
-                      </td>
+      {loading ? <div className="vhrp-card vhrp-card-pad" style={{ textAlign: 'center' }}><Spinner large /></div>
+        : runs.length === 0
+          ? <div className="vhrp-card"><Empty icon="▥" title="No payroll runs">No payrolls for the selected period.</Empty></div>
+          : (
+            <div className="vhrp-card">
+              <div className="vhrp-table-wrap">
+                <table className="vhrp-table">
+                  <thead>
+                    <tr>
+                      <th>Month</th><th className="vhrp-num">Employees</th><th className="vhrp-num">Gross</th>
+                      <th className="vhrp-num">Net pay</th><th className="vhrp-num">PF</th><th className="vhrp-num">ESI</th>
+                      <th className="vhrp-num">TDS</th><th>Status</th><th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {runs.map(r => (
+                      <tr key={r.id}>
+                        <td><b>{monthLabel(r.month_year)}</b></td>
+                        <td className="vhrp-num vhrp-mono">{r.employee_count}</td>
+                        <td className="vhrp-num vhrp-mono">{fmtINR(r.total_gross)}</td>
+                        <td className="vhrp-num vhrp-mono"><b>{fmtINR(r.total_net)}</b></td>
+                        <td className="vhrp-num vhrp-mono">{fmtINR(r.total_pf)}</td>
+                        <td className="vhrp-num vhrp-mono">{fmtINR(r.total_esi)}</td>
+                        <td className="vhrp-num vhrp-mono">{fmtINR(r.total_tds)}</td>
+                        <td><span className={`vhrp-badge ${RUN_BADGE[r.status] || 'vhrp-badge-gray'}`}>{r.status}</span></td>
+                        <td className="vhrp-text-right">
+                          <div className="vhrp-row vhrp-gap-sm" style={{ justifyContent: 'flex-end' }}>
+                            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={() => setViewRun(r.id)}>View</button>
+                            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={() => downloadExcel(r)} disabled={downloading === r.id}>
+                              {downloading === r.id ? '…' : '⬇ Excel'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
-          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border, #e5e0d8)' }}>
-            <div className="card-title" style={{ marginBottom: '0.75rem' }}>Statutory reports · {selected.month_year}</div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-gold btn-sm" disabled={downloadingReport === 'pf-ecr'} onClick={() => downloadReport('pf-ecr', selected)}>
-                {downloadingReport === 'pf-ecr' ? 'Downloading…' : '⬇ PF ECR Report'}
-              </button>
-              <button className="btn btn-gold btn-sm" disabled={downloadingReport === 'bank'} onClick={() => downloadReport('bank', selected)}>
-                {downloadingReport === 'bank' ? 'Downloading…' : '⬇ Bank Report'}
-              </button>
-              <button className="btn btn-gold btn-sm" disabled={downloadingReport === 'esi'} onClick={() => downloadReport('esi', selected)}>
-                {downloadingReport === 'esi' ? 'Downloading…' : '⬇ ESI Report'}
-              </button>
+      <PayrollDetailModal runId={viewRun} onClose={() => setViewRun(null)} />
+    </>
+  );
+}
+
+function PayrollDetailModal({ runId, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(null);
+
+  useEffect(() => {
+    if (!runId) { setData(null); return; }
+    setLoading(true);
+    clientApi.companyPayrollDetail(getToken(), runId)
+      .then(d => setData(d))
+      .catch(err => { setError(err.message); onClose(); })
+      .finally(() => setLoading(false));
+  }, [runId]); // eslint-disable-line
+
+  const downloadPdf = async (p) => {
+    setDownloading(p.id);
+    try { await clientApi.downloadCompanyPayslipPdf(getToken(), p.id, `Payslip_${p.full_name}_${data.run.month_year}.pdf`); }
+    catch (err) { setError(err.message); }
+    finally { setDownloading(null); }
+  };
+
+  const run = data?.run;
+  const payslips = data?.payslips || [];
+
+  return (
+    <Modal open={!!runId} onClose={onClose} title={run ? `Payroll — ${monthLabel(run.month_year)}` : 'Payroll detail'} width={860}>
+      {error && <div className="vhrp-alert vhrp-alert-error vhrp-mb">⚠️ {error}</div>}
+      {loading || !run ? <div style={{ textAlign: 'center', padding: 40 }}><Spinner large /></div> : (
+        <>
+          <div className="vhrp-dash-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+            {[['Employees', run.employee_count], ['Gross', fmtINR(run.total_gross)], ['Net pay', fmtINR(run.total_net)], ['TDS', fmtINR(run.total_tds)]].map(([l, v]) => (
+              <div key={l} className="vhrp-stat" style={{ padding: '12px 16px' }}>
+                <div className="vhrp-stat-label">{l}</div>
+                <div className="vhrp-stat-value" style={{ fontSize: '1.1rem' }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="vhrp-table-wrap" style={{ maxHeight: 340, overflowY: 'auto' }}>
+            <table className="vhrp-table">
+              <thead><tr><th>Employee</th><th className="vhrp-num">Earnings</th><th className="vhrp-num">Deductions</th><th className="vhrp-num">Net pay</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {payslips.map(p => (
+                  <tr key={p.id}>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{p.full_name}</div>
+                      <div className="vhrp-muted vhrp-mono" style={{ fontSize: '0.72rem' }}>{p.employee_number}{p.department ? ` · ${p.department}` : ''}</div>
+                    </td>
+                    <td className="vhrp-num vhrp-mono">{fmtINR(p.total_earnings)}</td>
+                    <td className="vhrp-num vhrp-mono">{fmtINR(p.total_deductions)}</td>
+                    <td className="vhrp-num vhrp-mono"><b>{fmtINR(p.net_pay)}</b></td>
+                    <td><span className={`vhrp-badge ${PS_BADGE[p.status] || 'vhrp-badge-gray'}`}>{p.status}</span></td>
+                    <td className="vhrp-text-right">
+                      <button className="vhrp-btn vhrp-btn-navy vhrp-btn-sm" onClick={() => downloadPdf(p)} disabled={downloading === p.id}>
+                        {downloading === p.id ? '…' : '⬇ PDF'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   COMPANY: Payslips tab (search, PDF, ZIP, PF-ECR/ESI/Bank reports)
+═══════════════════════════════════════════════════════════════════ */
+function PayslipsTab() {
+  const [monthYear, setMonthYear] = useState('');
+  const [payslips, setPayslips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(null);
+  const [downloadingZip, setDownloadingZip] = useState(false);
+  const [pfBusy, setPfBusy] = useState(false);
+  const [esiBusy, setEsiBusy] = useState(false);
+  const [bankBusy, setBankBusy] = useState(false);
+  const [viewPayslip, setViewPayslip] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try { setPayslips((await clientApi.companyPayslips(getToken(), monthYear || undefined)).payslips || []); }
+    catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  }, [monthYear]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = search.trim()
+    ? payslips.filter(p =>
+        p.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+        p.employee_number?.toLowerCase().includes(search.toLowerCase()) ||
+        p.department?.toLowerCase().includes(search.toLowerCase()))
+    : payslips;
+
+  const downloadPdf = async (p) => {
+    setDownloadingPdf(p.id);
+    try { await clientApi.downloadCompanyPayslipPdf(getToken(), p.id, `Payslip_${p.full_name}_${p.month_year}.pdf`); }
+    catch (err) { setError(err.message); }
+    finally { setDownloadingPdf(null); }
+  };
+
+  const downloadZip = async () => {
+    if (!monthYear) return setError('Select a month to download bulk payslips.');
+    setDownloadingZip(true);
+    try { await clientApi.downloadCompanyPayslipsZip(getToken(), monthYear, `Payslips_${monthYear}.zip`); }
+    catch (err) { setError(err.message); }
+    finally { setDownloadingZip(false); }
+  };
+
+  const downloadReport = async (kind) => {
+    if (!monthYear) return setError('Select a month first.');
+    const setBusy = kind === 'pf-ecr' ? setPfBusy : kind === 'esi' ? setEsiBusy : setBankBusy;
+    const fn = kind === 'pf-ecr' ? clientApi.downloadCompanyPfEcrReport : kind === 'esi' ? clientApi.downloadCompanyEsiReport : clientApi.downloadCompanyBankReport;
+    setBusy(true);
+    try { await fn(getToken(), monthYear, `${kind.toUpperCase()}_${monthYear}.xlsx`); }
+    catch (err) { setError(err.message); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <>
+      {error && <div className="vhrp-alert vhrp-alert-error vhrp-mb">⚠️ {error}</div>}
+      <div className="vhrp-card vhrp-card-pad vhrp-mb">
+        <div className="vhrp-row" style={{ flexWrap: 'wrap' }}>
+          <MonthPicker value={monthYear} onChange={setMonthYear} />
+          <input className="vhrp-input vhrp-flex-1" style={{ minWidth: 180 }} placeholder="Search name, employee number, department…"
+            value={search} onChange={e => setSearch(e.target.value)} />
+          <span className="vhrp-muted" style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+            {filtered.length} payslip{filtered.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        {payslips.length > 0 && (
+          <div className="vhrp-row" style={{ flexWrap: 'wrap', marginTop: '0.75rem' }}>
+            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={() => downloadReport('pf-ecr')} disabled={pfBusy}>
+              {pfBusy ? 'Generating…' : '⬇ PF ECR Report'}
+            </button>
+            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={() => downloadReport('esi')} disabled={esiBusy}>
+              {esiBusy ? 'Generating…' : '⬇ ESI Report'}
+            </button>
+            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={() => downloadReport('bank')} disabled={bankBusy}>
+              {bankBusy ? 'Generating…' : '⬇ Bank Report'}
+            </button>
+            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={downloadZip} disabled={downloadingZip}>
+              {downloadingZip ? 'Downloading…' : '⬇ ZIP (all payslips)'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {loading ? <div className="vhrp-card vhrp-card-pad" style={{ textAlign: 'center' }}><Spinner large /></div>
+        : filtered.length === 0
+          ? <div className="vhrp-card"><Empty icon="▥" title="No payslips">No payslips for the selected period.</Empty></div>
+          : (
+            <div className="vhrp-card">
+              <div className="vhrp-table-wrap">
+                <table className="vhrp-table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th><th>Month</th><th className="vhrp-num">Earnings</th>
+                      <th className="vhrp-num">Deductions</th><th className="vhrp-num">Net pay</th><th>Status</th><th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(p => (
+                      <tr key={p.id}>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{p.full_name}</div>
+                          <div className="vhrp-muted vhrp-mono" style={{ fontSize: '0.72rem' }}>{p.employee_number}{p.department ? ` · ${p.department}` : ''}</div>
+                        </td>
+                        <td>{monthLabel(p.month_year)}</td>
+                        <td className="vhrp-num vhrp-mono">{fmtINR(p.total_earnings)}</td>
+                        <td className="vhrp-num vhrp-mono">{fmtINR(p.total_deductions)}</td>
+                        <td className="vhrp-num vhrp-mono"><b>{fmtINR(p.net_pay)}</b></td>
+                        <td><span className={`vhrp-badge ${PS_BADGE[p.status] || 'vhrp-badge-gray'}`}>{p.status === 'ON_HOLD' ? 'On hold' : p.status}</span></td>
+                        <td className="vhrp-text-right">
+                          <div className="vhrp-row vhrp-gap-sm" style={{ justifyContent: 'flex-end' }}>
+                            <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={() => setViewPayslip(p.id)}>View</button>
+                            <button className="vhrp-btn vhrp-btn-navy vhrp-btn-sm" onClick={() => downloadPdf(p)} disabled={downloadingPdf === p.id}>
+                              {downloadingPdf === p.id ? '…' : '⬇ PDF'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+      <PayslipDetailModal payslipId={viewPayslip} onClose={() => setViewPayslip(null)} isCompany />
+    </>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Payslip detail modal (shared by company + employee views)
+═══════════════════════════════════════════════════════════════════ */
+function PayslipDetailModal({ payslipId, onClose, isCompany }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    if (!payslipId) { setData(null); return; }
+    setLoading(true);
+    const fetcher = isCompany ? clientApi.companyPayslipDetail(getToken(), payslipId) : clientApi.employeePayslips(getToken());
+    fetcher
+      .then(d => setData(isCompany ? d : { payslip: (d.payslips || []).find(p => p.id === payslipId), components: [] }))
+      .catch(err => { setError(err.message); onClose(); })
+      .finally(() => setLoading(false));
+  }, [payslipId]); // eslint-disable-line
+
+  const p = data?.payslip;
+  const components = data?.components || [];
+  const allowances = components.filter(c => ['ALLOWANCE', 'ADHOC_ALLOWANCE', 'ARREAR', 'OT'].includes(c.component_type));
+  const deductions = components.filter(c => ['DEDUCTION', 'ADHOC_DEDUCTION', 'CONTRIBUTION'].includes(c.component_type));
+
+  const downloadPdf = async () => {
+    setDownloading(true);
+    try {
+      if (isCompany) await clientApi.downloadCompanyPayslipPdf(getToken(), payslipId, `Payslip_${p?.full_name}_${p?.month_year}.pdf`);
+      else await clientApi.downloadEmployeePayslipPdf(getToken(), payslipId, `Payslip_${p?.month_year}.pdf`);
+    } catch (err) { setError(err.message); }
+    finally { setDownloading(false); }
+  };
+
+  return (
+    <Modal open={!!payslipId} onClose={onClose}
+      title={p ? `Payslip · ${monthLabel(p.month_year)}` : 'Payslip'}
+      width={680}
+      footer={p && (
+        <button className="vhrp-btn vhrp-btn-navy" onClick={downloadPdf} disabled={downloading}>
+          {downloading ? 'Downloading…' : '⬇ Download PDF'}
+        </button>
+      )}>
+      {error && <div className="vhrp-alert vhrp-alert-error vhrp-mb">⚠️ {error}</div>}
+      {loading || !p ? <div style={{ textAlign: 'center', padding: 40 }}><Spinner large /></div> : (
+        <>
+          <div className="vhrp-row-between vhrp-mb">
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{p.full_name || ''}</div>
+              <div className="vhrp-muted" style={{ fontSize: '0.8rem' }}>{p.employee_number}{p.department ? ` · ${p.department}` : ''}</div>
+            </div>
+            <div className="vhrp-text-right">
+              <div className="vhrp-muted" style={{ fontSize: '0.72rem' }}>NET PAY</div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--vhrp-green)' }}>{fmtINR(p.net_pay)}</div>
+              <span className={`vhrp-badge ${PS_BADGE[p.status] || 'vhrp-badge-gray'}`}>{p.status}</span>
+            </div>
+          </div>
+
+          <div className="vhrp-dash-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+            {[['Payable days', p.payable_days], ['LOP days', p.lop_days || 0], ['Gross earned', fmtINR(p.gross_earned)], ['TDS', fmtINR(p.tds_amount)]].map(([l, v]) => (
+              <div key={l} className="vhrp-stat" style={{ padding: '10px 14px' }}>
+                <div className="vhrp-stat-label" style={{ fontSize: '0.72rem' }}>{l}</div>
+                <div className="vhrp-stat-value" style={{ fontSize: '1rem' }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {components.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <div className="vhrp-row-between" style={{ padding: '8px 0', marginBottom: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--vhrp-navy)', letterSpacing: '0.05em' }}>Earnings</span>
+                  <span className="vhrp-muted" style={{ fontSize: '0.78rem' }}>{fmtINR(p.total_earnings)}</span>
+                </div>
+                <table className="vhrp-table" style={{ fontSize: '0.82rem' }}>
+                  <tbody>{allowances.map(c => <tr key={c.component_name}><td>{c.component_name}</td><td className="vhrp-num vhrp-mono">{fmtINR(c.earned_amount)}</td></tr>)}</tbody>
+                </table>
+              </div>
+              <div>
+                <div className="vhrp-row-between" style={{ padding: '8px 0', marginBottom: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--vhrp-navy)', letterSpacing: '0.05em' }}>Deductions</span>
+                  <span className="vhrp-muted" style={{ fontSize: '0.78rem' }}>{fmtINR(p.total_deductions)}</span>
+                </div>
+                <table className="vhrp-table" style={{ fontSize: '0.82rem' }}>
+                  <tbody>
+                    {deductions.map(c => <tr key={c.component_name}><td>{c.component_name}</td><td className="vhrp-num vhrp-mono">{fmtINR(c.earned_amount)}</td></tr>)}
+                    {p.tds_amount > 0 && <tr><td>TDS</td><td className="vhrp-num vhrp-mono">{fmtINR(p.tds_amount)}</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </Modal>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EMPLOYEE: Overview tab
+═══════════════════════════════════════════════════════════════════ */
+function OverviewTab({ me, onGoPayslips }) {
+  const [latest, setLatest] = useState(null);
+  const [count, setCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    clientApi.employeePayslips(getToken())
+      .then(d => { const list = d.payslips || []; setCount(list.length); setLatest(list[0] || null); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <>
+      <div className="vhrp-page-head">
+        <div>
+          <span className="vhrp-eyebrow">My space</span>
+          <h2 className="vhrp-page-title">Welcome, {me?.full_name || 'there'}</h2>
+          <p className="vhrp-page-sub">Your payslips and pay summary.</p>
+        </div>
+      </div>
+
+      {loading ? <div className="vhrp-card vhrp-card-pad" style={{ textAlign: 'center' }}><Spinner large /></div> : (
+        <div className="vhrp-dash-cols">
+          <div className="vhrp-card">
+            <div className="vhrp-card-head"><h3 className="vhrp-card-title">Latest payslip</h3></div>
+            <div className="vhrp-card-pad">
+              {latest ? (
+                <>
+                  <div className="vhrp-row-between vhrp-mb">
+                    <div>
+                      <div className="vhrp-display" style={{ fontSize: '1.3rem', color: 'var(--vhrp-navy)' }}>{monthLabel(latest.month_year)}</div>
+                      <span className={`vhrp-badge ${latest.status === 'PAID' ? 'vhrp-badge-green' : 'vhrp-badge-amber'}`}>{latest.status}</span>
+                    </div>
+                    <div className="vhrp-text-right">
+                      <div className="vhrp-muted" style={{ fontSize: '0.72rem' }}>NET PAY</div>
+                      <div className="vhrp-display" style={{ fontSize: '1.6rem', color: 'var(--vhrp-green)' }}>{fmtINR(latest.net_pay)}</div>
+                    </div>
+                  </div>
+                  <button className="vhrp-btn vhrp-btn-navy" onClick={onGoPayslips}>View all payslips →</button>
+                </>
+              ) : <Empty icon="▥" title="No payslips yet">Your payslips appear here once payroll is approved.</Empty>}
+            </div>
+          </div>
+
+          <div className="vhrp-card">
+            <div className="vhrp-card-head"><h3 className="vhrp-card-title">Summary</h3></div>
+            <div className="vhrp-card-pad">
+              <div className="vhrp-stat" style={{ border: 'none', padding: 0 }}>
+                <div className="vhrp-stat-label">Payslips available</div>
+                <div className="vhrp-stat-value">{count}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -234,52 +491,115 @@ function CompanyView({ onError }) {
   );
 }
 
-/* ── Employee: own payslips list + PDF download ── */
-function EmployeeView({ onError }) {
+/* ════════════════════════════════════════════════════════════════
+   EMPLOYEE: My payslips tab
+═══════════════════════════════════════════════════════════════════ */
+function MyPayslipsTab() {
   const [payslips, setPayslips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [downloadingId, setDownloadingId] = useState(null);
+  const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(null);
+  const [viewPayslip, setViewPayslip] = useState(null);
 
   useEffect(() => {
     clientApi.employeePayslips(getToken())
       .then(d => setPayslips(d.payslips || []))
-      .catch(err => onError(err.message))
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, [onError]);
+  }, []);
 
-  const downloadPdf = async (p) => {
-    setDownloadingId(p.id);
-    try {
-      await clientApi.downloadEmployeePayslipPdf(getToken(), p.id, `Payslip_${p.month_year}.pdf`);
-    } catch (err) { onError(err.message); } finally { setDownloadingId(null); }
+  const download = async (p) => {
+    setDownloading(p.id);
+    try { await clientApi.downloadEmployeePayslipPdf(getToken(), p.id, `Payslip_${p.month_year}.pdf`); }
+    catch (err) { setError(err.message); }
+    finally { setDownloading(null); }
   };
 
-  if (loading) return <div className="empty">🔄 Loading your payslips…</div>;
-  if (payslips.length === 0) return <div className="empty">No payslips yet.</div>;
+  return (
+    <>
+      {error && <div className="vhrp-alert vhrp-alert-error vhrp-mb">⚠️ {error}</div>}
+      {loading ? <div className="vhrp-card vhrp-card-pad" style={{ textAlign: 'center' }}><Spinner large /></div>
+        : payslips.length === 0 ? <div className="vhrp-card"><Empty icon="▥" title="No payslips yet">They appear once your payroll is approved.</Empty></div>
+        : (
+          <div className="vhrp-card">
+            <div className="vhrp-table-wrap">
+              <table className="vhrp-table">
+                <thead><tr><th>Month</th><th className="vhrp-num">Earnings</th><th className="vhrp-num">Deductions</th><th className="vhrp-num">Net pay</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                  {payslips.map(p => (
+                    <tr key={p.id}>
+                      <td><b>{monthLabel(p.month_year)}</b></td>
+                      <td className="vhrp-num vhrp-mono">{fmtINR(p.total_earnings)}</td>
+                      <td className="vhrp-num vhrp-mono">{fmtINR(p.total_deductions)}</td>
+                      <td className="vhrp-num vhrp-mono"><b>{fmtINR(p.net_pay)}</b></td>
+                      <td><span className={`vhrp-badge ${p.status === 'PAID' ? 'vhrp-badge-green' : 'vhrp-badge-amber'}`}>{p.status}</span></td>
+                      <td className="vhrp-text-right">
+                        <div className="vhrp-row vhrp-gap-sm" style={{ justifyContent: 'flex-end' }}>
+                          <button className="vhrp-btn vhrp-btn-ghost vhrp-btn-sm" onClick={() => setViewPayslip(p.id)}>View</button>
+                          <button className="vhrp-btn vhrp-btn-navy vhrp-btn-sm" onClick={() => download(p)} disabled={downloading === p.id}>
+                            {downloading === p.id ? '…' : '⬇ PDF'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      <PayslipDetailModal payslipId={viewPayslip} onClose={() => setViewPayslip(null)} isCompany={false} />
+    </>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Change password tab (shared)
+═══════════════════════════════════════════════════════════════════ */
+function ChangePasswordTab() {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const mismatch = next && confirm && next !== confirm;
+  const canSubmit = current && next.length >= 8 && next === confirm;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setBusy(true); setError(''); setSuccess('');
+    try {
+      await clientApi.changePassword(getToken(), current, next);
+      setSuccess('Password changed successfully.');
+      setCurrent(''); setNext(''); setConfirm('');
+    } catch (err) { setError(err.message); }
+    finally { setBusy(false); }
+  };
 
   return (
-    <div className="card">
-      <div className="card-header"><div className="card-title">Your payslips</div></div>
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>Month</th><th>Department</th><th>Net pay</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            {payslips.map(p => (
-              <tr key={p.id}>
-                <td>{p.month_year}</td>
-                <td>{p.department || '—'}</td>
-                <td>₹{Number(p.net_pay || 0).toLocaleString('en-IN')}</td>
-                <td><span className="badge badge-gray">{p.status}</span></td>
-                <td>
-                  <button className="btn btn-gold btn-sm" disabled={downloadingId === p.id} onClick={() => downloadPdf(p)}>
-                    {downloadingId === p.id ? 'Downloading…' : '⬇ PDF'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="vhrp-card vhrp-card-pad" style={{ maxWidth: 480 }}>
+      <h3 style={{ fontWeight: 700, marginBottom: 20, color: 'var(--vhrp-navy)' }}>Change password</h3>
+      {error && <div className="vhrp-alert vhrp-alert-error vhrp-mb">⚠️ {error}</div>}
+      {success && <div className="vhrp-alert vhrp-alert-success vhrp-mb">✓ {success}</div>}
+      <form onSubmit={submit}>
+        <Field label="Current password" required>
+          <input className="vhrp-input" type="password" value={current} onChange={e => setCurrent(e.target.value)} placeholder="Enter your current password" autoComplete="current-password" />
+        </Field>
+        <Field label="New password" required hint="Minimum 8 characters">
+          <input className="vhrp-input" type="password" value={next} onChange={e => setNext(e.target.value)} placeholder="Enter new password" autoComplete="new-password" />
+        </Field>
+        <Field label="Confirm new password" required hint={mismatch ? '⚠ Passwords do not match' : ''}>
+          <input className="vhrp-input" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Re-enter new password" autoComplete="new-password" />
+        </Field>
+        <div style={{ marginTop: 24 }}>
+          <button className="vhrp-btn vhrp-btn-gold" type="submit" disabled={busy || !canSubmit}>
+            {busy ? 'Updating…' : 'Update password'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

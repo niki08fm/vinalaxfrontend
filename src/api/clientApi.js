@@ -42,10 +42,14 @@ export const clientApi = {
     request('/change-password', { method: 'PUT', token, body: { currentPassword, newPassword } }),
 
   // Company self-service
-  companyPayrolls: (token) => request('/company/payrolls', { token }),
+  companyPayrolls: (token, monthYear) =>
+    request(`/company/payrolls${monthYear ? `?month_year=${monthYear}` : ''}`, { token }),
   companyPayrollDetail: (token, runId) => request(`/company/payrolls/${runId}`, { token }),
   downloadCompanyPayrollExcel: (token, runId, filename) =>
     downloadFile(`/company/payrolls/${runId}/excel`, token, filename),
+  companyPayslips: (token, monthYear) =>
+    request(`/company/payslips${monthYear ? `?month_year=${monthYear}` : ''}`, { token }),
+  companyPayslipDetail: (token, payslipId) => request(`/company/payslips/${payslipId}`, { token }),
   downloadCompanyPayslipPdf: (token, payslipId, filename) =>
     downloadFile(`/company/payslips/${payslipId}/pdf`, token, filename),
   downloadCompanyPayslipsZip: (token, monthYear, filename) =>
