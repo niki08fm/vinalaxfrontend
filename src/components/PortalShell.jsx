@@ -50,7 +50,7 @@ export default function PortalShell({ me, title, tab, onTabChange, children }) {
               <div className="vhrp-brand-sub">HR Solutions</div>
             </div>
           </div>
-          <nav className="vhrp-nav">
+          <div className="vhrp-nav">
             <div className="vhrp-nav-section">{isCompany ? 'Company Portal' : 'My Space'}</div>
             {nav.map(item => (
               <button
@@ -62,7 +62,7 @@ export default function PortalShell({ me, title, tab, onTabChange, children }) {
                 <span>{item.label}</span>
               </button>
             ))}
-          </nav>
+          </div>
           <div className="vhrp-sidebar-foot">
             <span className="vhrp-eyebrow" style={{ color: 'rgba(255,255,255,0.3)' }}>Client Portal</span>
           </div>
