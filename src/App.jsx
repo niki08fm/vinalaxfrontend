@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { storedClientSlug } from '/src/utils/clientSlug.js';
 import Home from '/src/pages/Home.jsx';
 import Login from '/src/pages/Login.jsx';
 import AdminDashboard from '/src/pages/AdminDashboard.jsx';
@@ -35,8 +36,13 @@ function App() {
 
         {/* Client Portal — company/employee logins, separate from the Admin above */}
         <Route path="/portal/login" element={<ClientLogin />} />
+        {/* Old address -> the client's own page */}
+        <Route path="/portal" element={<Navigate to={storedClientSlug() ? `/${storedClientSlug()}` : '/portal/login'} replace />} />
+
+        {/* Client's own page after login: site.com/<company-name>.
+            Keep this LAST — fixed paths above always win over it. */}
         <Route
-          path="/portal"
+          path="/:clientSlug"
           element={
             <ClientProtectedRoute>
               <ClientPortal />

@@ -2,6 +2,7 @@
 // Portal, matching HRMSOFTWARE's internal admin console look and feel.
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clearClientSession } from '/src/utils/clientSlug.js';
 import '../styles/clientPortal.css';
 import { initials } from '../utils/portalFormat';
 
@@ -34,9 +35,8 @@ export default function PortalShell({ me, title, tab, onTabChange, children }) {
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('client_token');
-    localStorage.removeItem('client_user');
-    navigate('/portal/login');
+    clearClientSession();
+    navigate('/portal/login', { replace: true });
   };
 
   return (

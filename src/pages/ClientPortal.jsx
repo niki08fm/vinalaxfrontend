@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { clientSlug, clearClientSession } from '/src/utils/clientSlug.js';
 import { clientApi } from '/src/api/clientApi.js';
 import PortalShell from '/src/components/PortalShell.jsx';
 import { Modal, Spinner, Empty, Field, MonthPicker } from '/src/components/PortalUI.jsx';
@@ -16,22 +17,29 @@ const TITLES = {
 
 export default function ClientPortal() {
   const navigate = useNavigate();
+  const { clientSlug: urlSlug } = useParams();
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(null);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('client_token');
-    localStorage.removeItem('client_user');
-    navigate('/portal/login');
+    clearClientSession();
+    navigate('/portal/login', { replace: true });
   }, [navigate]);
 
   useEffect(() => {
     clientApi.me(getToken())
-      .then(d => { setMe(d.user); setTab(d.user.role === 'COMPANY' ? 'payrolls' : 'overview'); })
+      .then(d => {
+        // Keep the URL as the signed-in client's own name (data is always scoped
+        // to the login by the HR system, whatever the URL says).
+        const slug = clientSlug(d.user);
+        localStorage.setItem('client_slug', slug);
+        if (urlSlug !== slug) navigate(`/${slug}`, { replace: true });
+        setMe(d.user); setTab(d.user.role === 'COMPANY' ? 'payrolls' : 'overview');
+      })
       .catch(() => { logout(); })
       .finally(() => setLoading(false));
-  }, [logout]);
+  }, [logout, urlSlug, navigate]);
 
   if (loading || !tab) return <div className="vhrp-root"><div className="vhrp-empty"><Spinner large /><div style={{ marginTop: 8 }}>Loading your portal…</div></div></div>;
   if (!me) return null;

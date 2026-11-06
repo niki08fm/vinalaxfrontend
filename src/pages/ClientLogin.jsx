@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
+import { clientSlug, storedClientSlug } from "/src/utils/clientSlug.js";
 import { clientApi } from "/src/api/clientApi.js";
 import { Field } from "/src/components/PortalUI.jsx";
 import "/src/styles/clientPortal.css";
@@ -19,13 +20,22 @@ export default function ClientLogin() {
       const data = await clientApi.login(email.trim(), password);
       localStorage.setItem("client_token", data.token);
       localStorage.setItem("client_user", JSON.stringify(data.user));
-      navigate("/portal");
+      // Company name is only returned by /me; it becomes the URL: site.com/<company-name>
+      const { user } = await clientApi.me(data.token);
+      const slug = clientSlug(user);
+      localStorage.setItem("client_slug", slug);
+      navigate(`/${slug}`, { replace: true });
     } catch (err) {
       setError(err.message || "Invalid email or password.");
     } finally {
       setBusy(false);
     }
   };
+
+  // Already signed in -> go straight to the client's own page
+  if (localStorage.getItem("client_token") && storedClientSlug()) {
+    return <Navigate to={`/${storedClientSlug()}`} replace />;
+  }
 
   return (
     <div className="vhrp-root">
