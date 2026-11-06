@@ -1,14 +1,11 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { storedClientSlug } from '/src/utils/clientSlug.js';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ToClientPortal from '/src/components/ToClientPortal.jsx';
 import Home from '/src/pages/Home.jsx';
 import Login from '/src/pages/Login.jsx';
 import AdminDashboard from '/src/pages/AdminDashboard.jsx';
 import ServiceDetails from '/src/pages/ServiceDetails.jsx';
 import ProtectedRoute from '/src/components/ProtectedRoute.jsx';
-import ClientLogin from '/src/pages/ClientLogin.jsx';
-import ClientPortal from '/src/pages/ClientPortal.jsx';
-import ClientProtectedRoute from '/src/components/ClientProtectedRoute.jsx';
 import './App.css';
 
 function App() {
@@ -34,21 +31,11 @@ function App() {
           }
         />
 
-        {/* Client Portal — company/employee logins, separate from the Admin above */}
-        <Route path="/portal/login" element={<ClientLogin />} />
-        {/* Old address -> the client's own page */}
-        <Route path="/portal" element={<Navigate to={storedClientSlug() ? `/${storedClientSlug()}` : '/portal/login'} replace />} />
-
-        {/* Client's own page after login: site.com/<company-name>.
-            Keep this LAST — fixed paths above always win over it. */}
-        <Route
-          path="/:clientSlug"
-          element={
-            <ClientProtectedRoute>
-              <ClientPortal />
-            </ClientProtectedRoute>
-          }
-        />
+        {/* Client portal lives at portal.vinalaxhrsolutions.com; old addresses forward there.
+            Keep /:clientSlug LAST — fixed paths above always win over it. */}
+        <Route path="/portal/login" element={<ToClientPortal />} />
+        <Route path="/portal" element={<ToClientPortal />} />
+        <Route path="/:clientSlug" element={<ToClientPortal />} />
       </Routes>
     </BrowserRouter>
   );

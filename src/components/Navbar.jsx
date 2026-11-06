@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { CLIENT_PORTAL_URL } from '/src/api/config.js';
 
 export default function Navbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -74,7 +75,7 @@ export default function Navbar() {
         <li><a onClick={() => handleNavClick('why')}>Why Us</a></li>
         <li><a onClick={() => handleNavClick('industries')}>Industries</a></li>
         <li><a onClick={() => handleNavClick('process')}>Process</a></li>
-        <li><a onClick={() => { setIsMobileOpen(false); navigate('/portal/login'); }}>Client Login</a></li>
+        <li><a href={`${CLIENT_PORTAL_URL}/login`} onClick={() => setIsMobileOpen(false)}>Client Login</a></li>
         <li><a onClick={() => handleNavClick('contact')} className="nav-cta">Get In Touch</a></li>
       </ul>
 
