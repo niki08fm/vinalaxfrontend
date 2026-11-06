@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '/src/api/config.js';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
@@ -26,7 +27,7 @@ export default function AdminDashboard() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch('https://vinalaxbackend.onrender.com/api/enquiries', {
+      const response = await fetch(`${API_BASE}/enquiries`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}` // Sends the secure JWT token to unlock the route
@@ -139,7 +140,7 @@ export default function AdminDashboard() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`https://vinalaxbackend.onrender.com/api/enquiries/${id}`, {
+      const response = await fetch(`${API_BASE}/enquiries/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

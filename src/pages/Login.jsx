@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE } from '/src/api/config.js';
 import { useNavigate } from "react-router-dom";
 import Navbar from "/src/components/Navbar.jsx";
 import Footer from "/src/components/Footer.jsx";
@@ -15,7 +16,7 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await fetch("https://vinalaxbackend.onrender.com/api/auth/login", {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

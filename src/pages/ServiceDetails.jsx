@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '/src/api/config.js';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import Footer from '../components/Footer.jsx';
@@ -135,7 +136,7 @@ export default function ServiceDetails() {
     }
 
     try {
-      const response = await fetch('https://vinalaxbackend.onrender.com/api/enquiries', {
+      const response = await fetch(`${API_BASE}/enquiries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

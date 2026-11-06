@@ -1,7 +1,9 @@
 // api/clientApi.js — talks to vinalaxbackend's /api/client/* routes, which
 // proxy straight through to the HR system's API. No data lives here; this
 // just handles auth + fetch plumbing for the Company/Employee portal.
-const BASE = import.meta.env.VITE_CLIENT_API_URL || 'https://vinalaxbackend.onrender.com/api/client';
+import { API_BASE } from './config.js';
+
+const BASE = `${API_BASE}/client`;
 
 async function request(path, { method = 'GET', body, token } = {}) {
   const res = await fetch(`${BASE}${path}`, {
