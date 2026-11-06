@@ -6,8 +6,13 @@ export function clientSlug(me) {
     .normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .toLowerCase().replace(/&/g, ' and ')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return slug || 'portal';
+  if (!slug) return 'portal-home';
+  // Never let a company name take over one of the website's own pages
+  // (e.g. a company called "Admin" gets /admin-co, not the admin page).
+  return RESERVED.has(slug) ? `${slug}-co` : slug;
 }
+
+const RESERVED = new Set(['admin', 'login', 'portal', 'services', 'site-api', 'api', 'assets', 'index-html', 'robots-txt', 'sitemap-xml', 'favicon-svg']);
 
 export function storedClientSlug() {
   try { return localStorage.getItem('client_slug') || ''; } catch { return ''; }

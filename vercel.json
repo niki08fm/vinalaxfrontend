@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/site-api/:path*", "destination": "http://3.109.84.186/site-api/:path*" },
+    { "source": "/site-api/:path*", "destination": "https://api.vinalaxhrsolutions.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
